@@ -3,14 +3,24 @@ package com.test.android;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.Rect;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
+import android.view.TextureView;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.CameraSelector;
+import androidx.camera.core.CameraX;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
@@ -21,18 +31,31 @@ import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.mlkit.vision.common.InputImage;
+import com.google.mlkit.vision.face.Face;
+import com.google.mlkit.vision.face.FaceDetection;
+import com.google.mlkit.vision.face.FaceDetector;
+import com.google.mlkit.vision.face.FaceDetectorOptions;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.util.EventListener;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
 /**
  * @author feifei.zhan
  */
 public class MainActivity extends AppCompatActivity {
+    private final String TAG = MainActivity.class.getSimpleName();
     private ImageCapture imageCapture;
     private ImageAnalysis imageAnalysis;
     private File outputDirectory;
@@ -41,6 +64,16 @@ public class MainActivity extends AppCompatActivity {
     private int REQUEST_CODE_PERMISSIONS = 10;
     private PreviewView previewView;
     private String FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS";
+    private com.google.mlkit.vision.face.FaceDetector detector;
+    private TextureView tv;
+    private ImageView iv;
+    private Bitmap bitmap;
+    private Canvas canvas;
+    private Paint linePaint;
+    private float widthScaleFactor = 1.0f;
+    private float heightScaleFactor = 1.0f;
+    private ImageView imageView;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,10 +81,14 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         previewView = findViewById(R.id.previewView);
+        imageView = findViewById(R.id.tracking_image_view);
 
+        TakePic.getInstance();
+        TakePic.getInstance().init(MainActivity.this,previewView,imageView);
         // 请求相机权限
         if (allPermissionsGranted()) {
-            startCamera();
+             //startCamera();
+            TakePic.getInstance().startCamera();
         } else {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
         }
@@ -59,7 +96,9 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.button1).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                takePhoto();
+                TakePic.getInstance().takePhoto(Environment.getExternalStorageDirectory() + File.separator + "Pictures" + File.separator );
+
+               // takePhoto();
             }
         });
 
@@ -73,31 +112,20 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.button3).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                analysis();
             }
         });
 
         findViewById(R.id.button4).setOnClickListener(new View.OnClickListener() {
+
             @Override
             public void onClick(View v) {
-               Intent intent = new Intent(MainActivity.this,MainActivity2.class);
-               startActivity(intent);
+                Intent intent = new Intent(MainActivity.this, MainActivity2.class);
+                startActivity(intent);
+
             }
         });
     }
 
-    private void analysis() {
-        imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(this), new ImageAnalysis.Analyzer() {
-            @Override
-            public void analyze(@NonNull ImageProxy image) {
-
-                Toast.makeText(MainActivity.this,
-                        image.toString(),
-                        Toast.LENGTH_SHORT).show();
-                Log.e("MainActivity",image.toString());
-            }
-        });
-    }
 
     private void takeVideo() {
 
@@ -110,20 +138,20 @@ public class MainActivity extends AppCompatActivity {
                 new ImageCapture.OutputFileOptions.Builder(photoFile).build();
         imageCapture.takePicture(outputOptions, ContextCompat.getMainExecutor(this),
                 new ImageCapture.OnImageSavedCallback() {
-            @Override
-            public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) {
-                Toast.makeText(MainActivity.this,
-                        "保存图片成功",
-                        Toast.LENGTH_SHORT).show();
-            }
+                    @Override
+                    public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) {
+                        Toast.makeText(MainActivity.this,
+                                "保存图片成功",
+                                Toast.LENGTH_SHORT).show();
+                    }
 
-            @Override
-            public void onError(@NonNull ImageCaptureException exception) {
-                Toast.makeText(MainActivity.this,
-                        exception.getMessage(),
-                        Toast.LENGTH_SHORT).show();
-            }
-        });
+                    @Override
+                    public void onError(@NonNull ImageCaptureException exception) {
+                        Toast.makeText(MainActivity.this,
+                                exception.getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private File getOutputDirectory() {
@@ -151,7 +179,8 @@ public class MainActivity extends AppCompatActivity {
                     cameraProvider.unbindAll();
                     // 将用例绑定到相机
                     cameraProvider.bindToLifecycle(MainActivity.this, cameraSelector, preview,
-                            imageCapture,imageAnalysis);
+                            imageCapture, imageAnalysis);
+
                 } catch (ExecutionException | InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -162,7 +191,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        startCamera();
+        //startCamera();
     }
 
     private boolean allPermissionsGranted() {
@@ -181,7 +210,7 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
             if (allPermissionsGranted()) {
-                startCamera();
+                //startCamera();
             } else {
                 Toast.makeText(this,
                         "Permissions not granted by the user.",

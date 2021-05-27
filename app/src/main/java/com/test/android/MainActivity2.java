@@ -174,7 +174,7 @@ public class MainActivity2 extends AppCompatActivity {
                     preview.setSurfaceProvider(previewView.getSurfaceProvider());
                     imageCapture = new ImageCapture.Builder().build();
                     // 默认选择后置摄像头，这边可以设置方法选择摄像头
-                    CameraSelector cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA;
+                    CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
                     cameraProvider.unbindAll();
                     // 将用例绑定到相机
                     cameraProvider.bindToLifecycle(MainActivity2.this, cameraSelector, preview,
