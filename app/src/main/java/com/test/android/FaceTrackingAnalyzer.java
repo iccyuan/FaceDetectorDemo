@@ -94,8 +94,8 @@ public class FaceTrackingAnalyzer implements ImageAnalysis.Analyzer {
                 Log.i(TAG, "NULL");
                 canvas = new Canvas();
                 canvas = surfaceHolder.lockCanvas();
-                canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
                 if(canvas!=null){
+                    canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
                     surfaceHolder.unlockCanvasAndPost(canvas);
                 }
             }
@@ -131,9 +131,9 @@ public class FaceTrackingAnalyzer implements ImageAnalysis.Analyzer {
                     + " bottom: " + face.getBoundingBox().bottom
                     + " right: " + face.getBoundingBox().right);
             canvas = surfaceHolder.lockCanvas();
-            canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-            canvas.drawRect(box, linePaint);
             if(canvas!=null){
+                canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+                canvas.drawRect(box, linePaint);
                 surfaceHolder.unlockCanvasAndPost(canvas);
             }
 
