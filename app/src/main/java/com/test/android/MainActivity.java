@@ -12,6 +12,7 @@ import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.view.SurfaceView;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.ImageView;
@@ -66,13 +67,13 @@ public class MainActivity extends AppCompatActivity {
     private String FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS";
     private com.google.mlkit.vision.face.FaceDetector detector;
     private TextureView tv;
-    private ImageView iv;
+    private TextureView iv;
     private Bitmap bitmap;
     private Canvas canvas;
     private Paint linePaint;
     private float widthScaleFactor = 1.0f;
     private float heightScaleFactor = 1.0f;
-    private ImageView imageView;
+    private SurfaceView imageView;
 
 
     @Override
@@ -115,15 +116,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        findViewById(R.id.button4).setOnClickListener(new View.OnClickListener() {
 
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, MainActivity2.class);
-                startActivity(intent);
-
-            }
-        });
     }
 
 

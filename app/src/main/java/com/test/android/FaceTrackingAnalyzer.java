@@ -4,10 +4,13 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.util.Log;
 import android.view.Surface;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.TextureView;
 import android.widget.ImageView;
 
@@ -30,11 +33,11 @@ import java.util.List;
 
 public class FaceTrackingAnalyzer implements ImageAnalysis.Analyzer {
     private static final String TAG = "MLKitFacesAnalyzer";
+    private final SurfaceHolder surfaceHolder;
     private FaceDetector detector;
     private PreviewView previewView;
-    private ImageView imageView;
+    private SurfaceView imageView;
 
-    private Bitmap bitmap;
     private Canvas canvas;
     private Paint linePaint;
     private float widthScaleFactor = 1.0f;
@@ -42,7 +45,7 @@ public class FaceTrackingAnalyzer implements ImageAnalysis.Analyzer {
     private int lens;
     private long lastTimestamp = 0;
 
-    FaceTrackingAnalyzer(PreviewView previewView, ImageView imageView, int lens) {
+    FaceTrackingAnalyzer(PreviewView previewView, SurfaceView imageView, int lens) {
         this.previewView = previewView;
         this.imageView = imageView;
         this.lens = lens;
@@ -51,15 +54,22 @@ public class FaceTrackingAnalyzer implements ImageAnalysis.Analyzer {
                 .setContourMode(FaceDetectorOptions.CONTOUR_MODE_ALL)
                 .build();
         detector = FaceDetection.getClient(options);
+        imageView.setZOrderOnTop(true);//处于顶层
+        imageView.getHolder().setFormat(PixelFormat.TRANSPARENT);//设置surface为透明
+        surfaceHolder = imageView.getHolder();
+        linePaint = new Paint();
+        linePaint.setColor(Color.WHITE);
+        linePaint.setStyle(Paint.Style.STROKE);
+        linePaint.setStrokeWidth(1f);
     }
 
 
     @Override
     public void analyze(@NonNull @NotNull ImageProxy imageProxy) {
         try {
-            if (System.currentTimeMillis() - lastTimestamp < 300) {
+          /*  if (System.currentTimeMillis() - lastTimestamp < 1000) {
                 return;
-            }
+            }*/
             lastTimestamp = System.currentTimeMillis();
 
             final Bitmap bitmap;
@@ -79,10 +89,15 @@ public class FaceTrackingAnalyzer implements ImageAnalysis.Analyzer {
         detector.process(inputImage).addOnSuccessListener(faces -> {
             if (!faces.isEmpty()) {
                 Log.i(TAG, "发现人脸");
-                processFaces(faces);
+                processFaces(inputImage,faces);
             } else {
                 Log.i(TAG, "NULL");
-                canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.MULTIPLY);
+                canvas = new Canvas();
+                canvas = surfaceHolder.lockCanvas();
+                canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+                if(canvas!=null){
+                    surfaceHolder.unlockCanvasAndPost(canvas);
+                }
             }
 
         }).addOnFailureListener(e -> Log.e(TAG, e.toString()));
@@ -91,17 +106,14 @@ public class FaceTrackingAnalyzer implements ImageAnalysis.Analyzer {
 
 
     private void initDrawingUtils(Bitmap inBitmap) {
-        bitmap = Bitmap.createBitmap(previewView.getWidth(), previewView.getHeight(), Bitmap.Config.ARGB_4444);
-        canvas = new Canvas(bitmap);
-        linePaint = new Paint();
-        linePaint.setColor(Color.WHITE);
-        linePaint.setStyle(Paint.Style.STROKE);
-        linePaint.setStrokeWidth(1f);
-        widthScaleFactor = canvas.getWidth() / (inBitmap.getWidth() * 1.0f);
-        heightScaleFactor = canvas.getHeight() / (inBitmap.getHeight() * 1.0f);
+
     }
 
-    private void processFaces(List<Face> faces) {
+    private void processFaces(InputImage inputImage,List<Face> faces) {
+        Bitmap bitmap = Bitmap.createBitmap(previewView.getWidth(), previewView.getHeight(), Bitmap.Config.ARGB_4444);
+        canvas = new Canvas(bitmap);
+        widthScaleFactor = canvas.getWidth() / (inputImage.getWidth() * 1.0f);
+        heightScaleFactor = canvas.getHeight() / (inputImage.getHeight() * 1.0f);
         for (Face face : faces) {
 
             Rect box = new Rect((int) translateX(face.getBoundingBox().left),
@@ -118,10 +130,15 @@ public class FaceTrackingAnalyzer implements ImageAnalysis.Analyzer {
                     + " left: " + face.getBoundingBox().left
                     + " bottom: " + face.getBoundingBox().bottom
                     + " right: " + face.getBoundingBox().right);
-
+            canvas = surfaceHolder.lockCanvas();
+            canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
             canvas.drawRect(box, linePaint);
+            if(canvas!=null){
+                surfaceHolder.unlockCanvasAndPost(canvas);
+            }
+
         }
-        imageView.setImageBitmap(bitmap);
+        //imageView.setImageBitmap(bitmap);
     }
 
     private float translateY(float y) {

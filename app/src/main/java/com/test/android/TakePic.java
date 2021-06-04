@@ -8,6 +8,7 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.util.Log;
 import android.util.Size;
+import android.view.SurfaceView;
 import android.view.TextureView;
 import android.widget.ImageView;
 
@@ -43,8 +44,8 @@ public class TakePic {
     private PreviewView previewView;
     private final String FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS";
     private AppCompatActivity mContext;
-    private ImageView imageView;
-    private int lens = CameraSelector.LENS_FACING_BACK;
+    private SurfaceView imageView;
+    private int lens = CameraSelector.LENS_FACING_FRONT;
 
     private volatile static TakePic instance = null;
 
@@ -65,7 +66,7 @@ public class TakePic {
         return instance;
     }
 
-    public void init(AppCompatActivity context, PreviewView previewView, ImageView imageView) {
+    public void init(AppCompatActivity context, PreviewView previewView, SurfaceView imageView) {
         this.mContext = context;
         this.previewView = previewView;
         this.imageView = imageView;
