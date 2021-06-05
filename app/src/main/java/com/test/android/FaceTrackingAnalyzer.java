@@ -33,10 +33,10 @@ import java.util.List;
 
 public class FaceTrackingAnalyzer implements ImageAnalysis.Analyzer {
     private static final String TAG = "MLKitFacesAnalyzer";
-    private final SurfaceHolder surfaceHolder;
+   // private final SurfaceHolder surfaceHolder;
     private FaceDetector detector;
     private PreviewView previewView;
-    private SurfaceView imageView;
+    private TextureView imageView;
 
     private Canvas canvas;
     private Paint linePaint;
@@ -45,7 +45,7 @@ public class FaceTrackingAnalyzer implements ImageAnalysis.Analyzer {
     private int lens;
     private long lastTimestamp = 0;
 
-    FaceTrackingAnalyzer(PreviewView previewView, SurfaceView imageView, int lens) {
+    FaceTrackingAnalyzer(PreviewView previewView, TextureView imageView, int lens) {
         this.previewView = previewView;
         this.imageView = imageView;
         this.lens = lens;
@@ -54,22 +54,24 @@ public class FaceTrackingAnalyzer implements ImageAnalysis.Analyzer {
                 .setContourMode(FaceDetectorOptions.CONTOUR_MODE_ALL)
                 .build();
         detector = FaceDetection.getClient(options);
-        imageView.setZOrderOnTop(true);//处于顶层
-        imageView.getHolder().setFormat(PixelFormat.TRANSPARENT);//设置surface为透明
-        surfaceHolder = imageView.getHolder();
+        //imageView.setZOrderOnTop(true);//处于顶层
+        //imageView.getHolder().setFormat(PixelFormat.TRANSPARENT);//设置surface为透明
+        //surfaceHolder = imageView.getHolder();
+        //设置透明
+        imageView.setOpaque(false);
         linePaint = new Paint();
         linePaint.setColor(Color.WHITE);
         linePaint.setStyle(Paint.Style.STROKE);
-        linePaint.setStrokeWidth(1f);
+        linePaint.setStrokeWidth(2f);
     }
 
 
     @Override
     public void analyze(@NonNull @NotNull ImageProxy imageProxy) {
         try {
-          /*  if (System.currentTimeMillis() - lastTimestamp < 1000) {
+            if (System.currentTimeMillis() - lastTimestamp < 500) {
                 return;
-            }*/
+            }
             lastTimestamp = System.currentTimeMillis();
 
             final Bitmap bitmap;
@@ -93,10 +95,10 @@ public class FaceTrackingAnalyzer implements ImageAnalysis.Analyzer {
             } else {
                 Log.i(TAG, "NULL");
                 canvas = new Canvas();
-                canvas = surfaceHolder.lockCanvas();
+                canvas = imageView.lockCanvas();
                 if(canvas!=null){
                     canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-                    surfaceHolder.unlockCanvasAndPost(canvas);
+                    imageView.unlockCanvasAndPost(canvas);
                 }
             }
 
@@ -130,11 +132,11 @@ public class FaceTrackingAnalyzer implements ImageAnalysis.Analyzer {
                     + " left: " + face.getBoundingBox().left
                     + " bottom: " + face.getBoundingBox().bottom
                     + " right: " + face.getBoundingBox().right);
-            canvas = surfaceHolder.lockCanvas();
+            canvas = imageView.lockCanvas();
             if(canvas!=null){
                 canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
                 canvas.drawRect(box, linePaint);
-                surfaceHolder.unlockCanvasAndPost(canvas);
+                imageView.unlockCanvasAndPost(canvas);
             }
 
         }

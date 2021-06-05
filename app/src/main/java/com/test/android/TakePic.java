@@ -44,8 +44,8 @@ public class TakePic {
     private PreviewView previewView;
     private final String FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS";
     private AppCompatActivity mContext;
-    private SurfaceView imageView;
-    private int lens = CameraSelector.LENS_FACING_FRONT;
+    private TextureView imageView;
+    private int lens = CameraSelector.LENS_FACING_BACK;
 
     private volatile static TakePic instance = null;
 
@@ -66,7 +66,7 @@ public class TakePic {
         return instance;
     }
 
-    public void init(AppCompatActivity context, PreviewView previewView, SurfaceView imageView) {
+    public void init(AppCompatActivity context, PreviewView previewView, TextureView imageView) {
         this.mContext = context;
         this.previewView = previewView;
         this.imageView = imageView;

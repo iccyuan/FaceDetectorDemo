@@ -73,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
     private Paint linePaint;
     private float widthScaleFactor = 1.0f;
     private float heightScaleFactor = 1.0f;
-    private SurfaceView imageView;
+    private TextureView imageView;
 
 
     @Override
